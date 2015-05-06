@@ -58,7 +58,7 @@ def parseprint(code, filename="<string>", mode="exec", **kwargs):
 # Short name: pp = parse, dump, print
 pp = parseprint
 
-debug = True
+debug = False
 
 f = open("sample.py")
 content = f.read()
@@ -88,9 +88,12 @@ global_dict = {}
 
 def lookup(id, class_dict=None):
     if class_dict is None:
-        return global_dict[id]
+        return global_dict.get(id)
     else:
-        return (class_dict[id] or global_dict[id])
+        return (class_dict.get(id) or global_dict.get(id))
+
+def object_lookup(attr, object):
+    return object.object_dict.get(attr) or object.klass.class_dict.get(attr)
 
 def evaluate(exp, class_dict=None):
     dpp(exp)
@@ -107,16 +110,16 @@ def evaluate(exp, class_dict=None):
         dprint('---Name')
         dprint(exp.id)
         dprint('---')
-        return lookup(exp.id)
+        return lookup(exp.id, class_dict)
 
     # Name#Del
     if (type(exp) is Name) and (type(exp.ctx) is Del):
+        dprint('---Del---')
         return exp.id
 
     # Pass
     if type(exp) is Pass:
-        dprint('---Pass')
-        dprint('---')
+        dprint('---Pass---')
         return None
 
     # Delete
@@ -129,11 +132,13 @@ def evaluate(exp, class_dict=None):
 
     # func with class
     if (type(exp) is Call) and (type(exp.func) is Name):
+        dprint('---Call')
         func = lookup(exp.func.id, class_dict)
         if isinstance(func, ClassObject):
             return Object(func)
         else:
             raise Exception("NYI")
+        dprint('---')
 
     # Assign
     if type(exp) is Assign:
@@ -148,6 +153,16 @@ def evaluate(exp, class_dict=None):
         dprint('global_dict after Assign')
         dprint(global_dict)
         dprint('---')
+
+    # Attribute
+    if type(exp) is Attribute:
+        dprint('---Attribute')
+        object = evaluate(exp.value, class_dict)
+        assert isinstance(object, Object)
+        dprint(object)
+        value = object_lookup(exp.attr, object)
+        dprint('---')
+        return value
 
     # Print
     if type(exp) is Print:
