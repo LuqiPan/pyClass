@@ -1,5 +1,6 @@
 import ast
 import pdb
+import pprint
 
 """
 A pretty-printing dump function for the ast module.  The code was copied from
@@ -65,9 +66,19 @@ tree = ast.parse(content)
 if debug:
     print ast.dump(tree, False)
 
+class ClassObject:
+    def __init__(self, bases):
+        self.class_dict = {}
+        self.bases = bases
+
+class Object:
+    def __init__(self, klass):
+        self.klass = klass
+        self.object_dict = {}
+
 def dprint(something):
     if debug:
-        print something
+        print(something)
 
 def dpp(something):
     if debug:
@@ -78,9 +89,12 @@ global_dict = {}
 def lookup(id, class_dict=None):
     if class_dict is None:
         return global_dict[id]
+    else:
+        return (class_dict[id] or global_dict[id])
 
-def evaluate(exp):
+def evaluate(exp, class_dict=None):
     dpp(exp)
+
     # Num
     if type(exp) is Num:
         dprint('---Num')
@@ -113,13 +127,24 @@ def evaluate(exp):
         dprint(global_dict)
         dprint('---')
 
+    # func with class
+    if (type(exp) is Call) and (type(exp.func) is Name):
+        func = lookup(exp.func.id, class_dict)
+        if isinstance(func, ClassObject):
+            return Object(func)
+        else:
+            raise Exception("NYI")
+
     # Assign
     if type(exp) is Assign:
         dprint('---Assign')
         assert len(exp.targets) == 1
         dprint(exp.targets)
         dprint(exp.value)
-        global_dict[exp.targets[0].id] = evaluate(exp.value)
+        if class_dict is not None:
+            class_dict[exp.targets[0].id] = evaluate(exp.value, class_dict)
+        else:
+            global_dict[exp.targets[0].id] = evaluate(exp.value)
         dprint('global_dict after Assign')
         dprint(global_dict)
         dprint('---')
@@ -133,6 +158,23 @@ def evaluate(exp):
         dprint('---')
         print v
 
+    # ClassDef
+    if type(exp) is ClassDef:
+        dprint('---ClassDef')
+        #TODO: handle inheritance
+        class_object = ClassObject(exp.bases)
+        dprint('class_dict after init')
+        dprint(class_object.class_dict)
+        global_dict[exp.name] = class_object
+        for sub in exp.body:
+            evaluate(sub, class_object.class_dict)
+        dprint('class_dict after eval')
+        dprint(class_object.class_dict)
+        dprint('bases after eval')
+        dprint(class_object.bases)
+        dprint('global_dict after eval')
+        dprint(global_dict)
+        dprint('---')
 
 for c in ast.iter_child_nodes(tree):
     evaluate(c)
