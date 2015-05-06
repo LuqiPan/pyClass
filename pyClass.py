@@ -95,6 +95,15 @@ def lookup(id, class_dict=None):
 def object_lookup(attr, object):
     return object.object_dict.get(attr) or object.klass.class_dict.get(attr)
 
+def object_field_update(attr, val, object):
+    if object.object_dict.get(attr) is None:
+        if object.klass.class_dict.get(attr) is None:
+            object.object_dict[attr] = val
+        else:
+            object.klass.class_dict[attr] = val
+    else:
+        object.object_dict[attr] = val
+
 def evaluate(exp, class_dict=None):
     dpp(exp)
 
@@ -146,16 +155,20 @@ def evaluate(exp, class_dict=None):
         assert len(exp.targets) == 1
         dprint(exp.targets)
         dprint(exp.value)
-        if class_dict is not None:
-            class_dict[exp.targets[0].id] = evaluate(exp.value, class_dict)
+        if type(exp.targets[0]) is Attribute:
+            object = lookup(exp.targets[0].value.id, class_dict)
+            object_field_update(exp.targets[0].attr, evaluate(exp.value), object)
         else:
-            global_dict[exp.targets[0].id] = evaluate(exp.value)
+            if class_dict is not None:
+                class_dict[exp.targets[0].id] = evaluate(exp.value, class_dict)
+            else:
+                global_dict[exp.targets[0].id] = evaluate(exp.value)
         dprint('global_dict after Assign')
         dprint(global_dict)
         dprint('---')
 
     # Attribute
-    if type(exp) is Attribute:
+    if (type(exp) is Attribute) and (type(exp.ctx) is Load):
         dprint('---Attribute')
         object = evaluate(exp.value, class_dict)
         assert isinstance(object, Object)
