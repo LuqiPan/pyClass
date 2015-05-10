@@ -82,6 +82,10 @@ class Function:
         self.param = param
         self.body = body
 
+class Method:
+    def __init__(self, func):
+        self.func = func
+
 def dprint(something):
     if debug == 'true':
         print(something)
@@ -99,7 +103,10 @@ def lookup(id, class_dict=None):
         return (class_dict.get(id) or global_dict.get(id))
 
 def object_lookup(attr, object):
-    return object.object_dict.get(attr) or object.klass.class_dict.get(attr)
+    result = object.object_dict.get(attr) or object.klass.class_dict.get(attr)
+    if isinstance(result, Method):
+        result.self_obj = object
+    return result
 
 def object_field_update(attr, val, object):
     object.object_dict[attr] = val
@@ -216,13 +223,14 @@ def evaluate(exp, class_dict=None):
         dprint('---FunctionDef')
         # only single parameter functions
         assert len(exp.args.args) == 1
-        func = Function(exp.args.args[0].id, exp.body)
         dprint('param is: ' + exp.args.args[0].id)
         dprint('body is')
+        func = Function(exp.args.args[0].id, exp.body)
         for e in exp.body:
             dpp(e)
         if class_dict is not None:
-            class_dict[exp.name] = func
+            meth = Method(func)
+            class_dict[exp.name] = meth
         else:
             global_dict[exp.name] = func
         dprint('class_dict after func def')
@@ -234,28 +242,59 @@ def evaluate(exp, class_dict=None):
     #Function Call
     if (type(exp) is Expr) and (type(exp.value) is Call):
         dprint('---Function Call')
-        if type(exp.value.func) is Attribute:
+        func_or_meth = evaluate(exp.value.func)
+        if isinstance(func_or_meth, Method):
             assert len(exp.value.args) == 0
-            func = evaluate(exp.value.func)
-            assert isinstance(func, Function)
+            meth = func_or_meth
+            assert isinstance(meth, Method)
             #store the old binding
-            oldvalue = global_dict.get(func.param)
-            global_dict[func.param] = evaluate(exp.value.func.value)
-            for e in func.body:
+            oldvalue = global_dict.get(meth.func.param)
+            # FIXME
+            #pdb.set_trace()
+            global_dict[meth.func.param] = meth.self_obj
+            for e in meth.func.body:
                 evaluate(e)
             #restore the old binding
-            global_dict[func.param] = oldvalue
+            global_dict[meth.func.param] = oldvalue
         else:
-            assert len(exp.value.args) == 1
-            func = evaluate(exp.value.func)
-            assert isinstance(func, Function)
-            #store the old binding
-            oldvalue = global_dict.get(func.param)
-            global_dict[func.param] = evaluate(exp.value.args[0])
-            for e in func.body:
-                evaluate(e)
-            #restore the old binding
-            global_dict[func.param] = oldvalue
+            if isinstance(func_or_meth, Function):
+                assert len(exp.value.args) == 1
+                func = func_or_meth
+                assert isinstance(func, Function)
+                #store the old binding
+                oldvalue = global_dict.get(func.param)
+                global_dict[func.param] = evaluate(exp.value.args[0])
+                for e in func.body:
+                    evaluate(e)
+                #restore the old binding
+                global_dict[func.param] = oldvalue
+            else:
+                #wrong
+                assert 0 == 1
+
+        #if type(exp.value.func) is Attribute:
+            #assert len(exp.value.args) == 0
+            #meth = evaluate(exp.value.func)
+            #assert isinstance(meth, Method)
+            ##store the old binding
+            #oldvalue = global_dict.get(meth.func.param)
+            ## FIXME
+            #global_dict[meth.func.param] = evaluate(exp.value.func.value)
+            #for e in meth.func.body:
+                #evaluate(e)
+            ##restore the old binding
+            #global_dict[meth.func.param] = oldvalue
+        #else:
+            #assert len(exp.value.args) == 1
+            #func = evaluate(exp.value.func)
+            #assert isinstance(func, Function)
+            ##store the old binding
+            #oldvalue = global_dict.get(func.param)
+            #global_dict[func.param] = evaluate(exp.value.args[0])
+            #for e in func.body:
+                #evaluate(e)
+            ##restore the old binding
+            #global_dict[func.param] = oldvalue
         dprint('---')
 
 for c in ast.iter_child_nodes(tree):
