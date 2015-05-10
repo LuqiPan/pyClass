@@ -1,6 +1,7 @@
 import ast
 import pdb
 import pprint
+from sys import argv
 
 """
 A pretty-printing dump function for the ast module.  The code was copied from
@@ -60,7 +61,7 @@ pp = parseprint
 
 debug = False
 
-f = open("sample.py")
+f = open(argv[1])
 content = f.read()
 tree = ast.parse(content)
 if debug:
