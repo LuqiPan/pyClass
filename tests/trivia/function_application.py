@@ -1,4 +1,4 @@
 def f(i):
     print i
 
-f(1)
+f(5)

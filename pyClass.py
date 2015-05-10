@@ -77,6 +77,11 @@ class Object:
         self.klass = klass
         self.object_dict = {}
 
+class Function:
+    def __init__(self, param, body):
+        self.param = param
+        self.body = body
+
 def dprint(something):
     if debug == 'true':
         print(something)
@@ -204,6 +209,34 @@ def evaluate(exp, class_dict=None):
         dprint(class_object.bases)
         dprint('global_dict after eval')
         dprint(global_dict)
+        dprint('---')
+
+    # Function Definition
+    if type(exp) is FunctionDef:
+        dprint('---FunctionDef')
+        # only single parameter functions
+        assert len(exp.args.args) == 1
+        func = Function(exp.args.args[0].id, exp.body)
+        dprint('param is: ' + exp.args.args[0].id)
+        dprint('body is')
+        for e in exp.body:
+            dpp(e)
+        global_dict[exp.name] = func
+        dprint('---')
+
+    #Function Call
+    if (type(exp) is Expr) and (type(exp.value) is Call):
+        dprint('---Function Call')
+        assert len(exp.value.args) == 1
+        func = evaluate(exp.value.func)
+        assert isinstance(func, Function)
+        #store the old binding
+        oldvalue = global_dict.get(func.param)
+        global_dict[func.param] = evaluate(exp.value.args[0])
+        for e in func.body:
+            evaluate(e)
+        #restore the old binding
+        global_dict[func.param] = oldvalue
         dprint('---')
 
 for c in ast.iter_child_nodes(tree):
