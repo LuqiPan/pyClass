@@ -13,7 +13,7 @@ for root, dirs, files in os.walk('tests'):
                 print 'output from python:'
                 print python_output
 
-                p = Popen(['python', 'pyClass.py', f], stdin=PIPE, stdout=PIPE)
+                p = Popen(['python', 'pyClass.py', f, 'false'], stdin=PIPE, stdout=PIPE)
                 my_output = p.communicate()[0]
                 print 'output from my interpreter:'
                 print my_output

@@ -59,12 +59,12 @@ def parseprint(code, filename="<string>", mode="exec", **kwargs):
 # Short name: pp = parse, dump, print
 pp = parseprint
 
-debug = False
+debug = argv[2]
 
 f = open(argv[1])
 content = f.read()
 tree = ast.parse(content)
-if debug:
+if debug == 'true':
     print ast.dump(tree, False)
 
 class ClassObject:
@@ -78,11 +78,11 @@ class Object:
         self.object_dict = {}
 
 def dprint(something):
-    if debug:
+    if debug == 'true':
         print(something)
 
 def dpp(something):
-    if debug:
+    if debug == 'true':
         pp(something)
 
 global_dict = {}
@@ -97,13 +97,14 @@ def object_lookup(attr, object):
     return object.object_dict.get(attr) or object.klass.class_dict.get(attr)
 
 def object_field_update(attr, val, object):
-    if object.object_dict.get(attr) is None:
-        if object.klass.class_dict.get(attr) is None:
-            object.object_dict[attr] = val
-        else:
-            object.klass.class_dict[attr] = val
-    else:
-        object.object_dict[attr] = val
+    object.object_dict[attr] = val
+    #if object.object_dict.get(attr) is None:
+        #if object.klass.class_dict.get(attr) is None:
+            #object.object_dict[attr] = val
+        #else:
+            #object.klass.class_dict[attr] = val
+    #else:
+        #object.object_dict[attr] = val
 
 def evaluate(exp, class_dict=None):
     dpp(exp)
