@@ -174,7 +174,11 @@ def evaluate(exp, class_dict=None):
             object_field_update(exp.targets[0].attr, evaluate(exp.value), object)
         else:
             if class_dict is not None:
-                class_dict[exp.targets[0].id] = evaluate(exp.value, class_dict)
+                #pdb.set_trace()
+                result = evaluate(exp.value, class_dict)
+                if isinstance(result, Function):
+                    result = Method(result)
+                class_dict[exp.targets[0].id] = result
             else:
                 global_dict[exp.targets[0].id] = evaluate(exp.value)
         dprint('global_dict after Assign')
