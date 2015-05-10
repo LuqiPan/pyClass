@@ -269,32 +269,9 @@ def evaluate(exp, class_dict=None):
                 #restore the old binding
                 global_dict[func.param] = oldvalue
             else:
-                #wrong
+                #this shouldn't happen
                 assert 0 == 1
 
-        #if type(exp.value.func) is Attribute:
-            #assert len(exp.value.args) == 0
-            #meth = evaluate(exp.value.func)
-            #assert isinstance(meth, Method)
-            ##store the old binding
-            #oldvalue = global_dict.get(meth.func.param)
-            ## FIXME
-            #global_dict[meth.func.param] = evaluate(exp.value.func.value)
-            #for e in meth.func.body:
-                #evaluate(e)
-            ##restore the old binding
-            #global_dict[meth.func.param] = oldvalue
-        #else:
-            #assert len(exp.value.args) == 1
-            #func = evaluate(exp.value.func)
-            #assert isinstance(func, Function)
-            ##store the old binding
-            #oldvalue = global_dict.get(func.param)
-            #global_dict[func.param] = evaluate(exp.value.args[0])
-            #for e in func.body:
-                #evaluate(e)
-            ##restore the old binding
-            #global_dict[func.param] = oldvalue
         dprint('---')
 
 for c in ast.iter_child_nodes(tree):
