@@ -158,9 +158,25 @@ def evaluate(exp, class_dict=None):
         dprint('---Call')
         func = lookup(exp.func.id, class_dict)
         if isinstance(func, ClassObject):
-            return Object(func)
+            object = Object(func)
+            init = object_lookup('__init__', object)
+            if (init is not None) and (isinstance(init, Method)):
+                #apply init method
+                assert len(exp.args) == 0
+                meth = init
+                assert isinstance(meth, Method)
+                #store the old binding
+                oldvalue = global_dict.get(meth.func.param)
+                # FIXME
+                #pdb.set_trace()
+                global_dict[meth.func.param] = meth.self_obj
+                for e in meth.func.body:
+                    evaluate(e)
+                #restore the old binding
+                global_dict[meth.func.param] = oldvalue
+            return object
         else:
-            raise Exception("NYI")
+            raise Exception("shouldn't happen")
         dprint('---')
 
     # Assign

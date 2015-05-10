@@ -29,7 +29,8 @@ for root, dirs, files in os.walk('tests'):
 
 if ok == total:
     print '****************'
-    print 'ALL PASSED'
+    print '* %(ok)2d/%(total)2d PASSED *' % {'ok' : ok, 'total' : total}
+    print '*  ALL PASSED  *'
     print '****************'
 else:
     print '****************'
