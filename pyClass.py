@@ -221,22 +221,41 @@ def evaluate(exp, class_dict=None):
         dprint('body is')
         for e in exp.body:
             dpp(e)
-        global_dict[exp.name] = func
+        if class_dict is not None:
+            class_dict[exp.name] = func
+        else:
+            global_dict[exp.name] = func
+        dprint('class_dict after func def')
+        dprint(class_dict)
+        dprint('global_dict after func def')
+        dprint(global_dict)
         dprint('---')
 
     #Function Call
     if (type(exp) is Expr) and (type(exp.value) is Call):
         dprint('---Function Call')
-        assert len(exp.value.args) == 1
-        func = evaluate(exp.value.func)
-        assert isinstance(func, Function)
-        #store the old binding
-        oldvalue = global_dict.get(func.param)
-        global_dict[func.param] = evaluate(exp.value.args[0])
-        for e in func.body:
-            evaluate(e)
-        #restore the old binding
-        global_dict[func.param] = oldvalue
+        if type(exp.value.func) is Attribute:
+            assert len(exp.value.args) == 0
+            func = evaluate(exp.value.func)
+            assert isinstance(func, Function)
+            #store the old binding
+            oldvalue = global_dict.get(func.param)
+            global_dict[func.param] = evaluate(exp.value.func.value)
+            for e in func.body:
+                evaluate(e)
+            #restore the old binding
+            global_dict[func.param] = oldvalue
+        else:
+            assert len(exp.value.args) == 1
+            func = evaluate(exp.value.func)
+            assert isinstance(func, Function)
+            #store the old binding
+            oldvalue = global_dict.get(func.param)
+            global_dict[func.param] = evaluate(exp.value.args[0])
+            for e in func.body:
+                evaluate(e)
+            #restore the old binding
+            global_dict[func.param] = oldvalue
         dprint('---')
 
 for c in ast.iter_child_nodes(tree):

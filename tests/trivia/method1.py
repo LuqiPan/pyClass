@@ -1,7 +1,6 @@
 class MyClass:
-    i = 12345
     def f(self):
-        print self.i
+        print 1
 
 o = MyClass()
 o.f()
