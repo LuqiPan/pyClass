@@ -5,6 +5,21 @@ total = 0
 ok = 0
 for root, dirs, files in os.walk('tests'):
     for dir in dirs:
+        if dir == 'error':
+            for subroot, subdirs, subfiles in os.walk(os.path.join('tests', dir)):
+                for file in subfiles:
+                    total += 1
+                    print '======================='
+                    f = os.path.join('tests', dir, file)
+                    p = Popen(['python', 'pyClass.py', f, 'false'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                    my_output = p.communicate()[1]
+                    print 'output from my interpreter:'
+                    print my_output
+                    assert 'ERROR: MRO conflict!' in my_output
+                    if 'ERROR: MRO conflict!' in my_output:
+                        ok += 1
+                    print '======================='
+            continue
         for subroot, subdirs, subfiles in os.walk(os.path.join('tests', dir)):
             for file in subfiles:
                 total += 1

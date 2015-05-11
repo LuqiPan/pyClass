@@ -7,7 +7,7 @@ class Y(object):
 class A(X,Y):
     pass
 
-class B(Y,X):
+class B(X,Y):
     pass
 
 class C(A,B):

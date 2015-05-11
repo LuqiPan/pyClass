@@ -1,6 +1,7 @@
 import ast
 import pdb
 import pprint
+import copy
 from sys import argv
 
 """
@@ -94,7 +95,9 @@ def dpp(something):
     if debug == 'true':
         pp(something)
 
-global_dict = {}
+object_class_object = ClassObject([])
+object_class_object.linearizations = ['object']
+global_dict = {'object' : object_class_object}
 
 def lookup(id, class_dict=None):
     if class_dict is None:
@@ -117,6 +120,46 @@ def object_field_update(attr, val, object):
             #object.klass.class_dict[attr] = val
     #else:
         #object.object_dict[attr] = val
+
+def good_head(head, linearizations):
+    for lin in linearizations:
+        if (len(lin) >= 1) and (head in lin[1:]):
+            return False
+    return True
+
+def remove_head(head, linearizations):
+    for lin in linearizations:
+        if head in lin:
+            assert lin.index(head) == 0
+            lin.remove(head)
+
+def finished(linearizations):
+    for lin in linearizations:
+        if len(lin) > 0:
+            return False
+    return True
+
+def merge(linearizations, bases):
+    result = []
+    new_added = True
+    while new_added:
+        new_added = False
+        for lin in linearizations:
+            if (len(lin) > 0) and good_head(lin[0], linearizations):
+                result.append(lin[0])
+                remove_head(lin[0], linearizations)
+                new_added = True
+                break
+    if finished(linearizations):
+        return result
+    else:
+        raise Exception("ERROR: MRO conflict!")
+
+def linearization(name, bases):
+    base_objects = [lookup(n) for n in bases]
+    linearizations = [copy.deepcopy(bo.linearizations) for bo in base_objects]
+    result = [name] + merge(linearizations, bases)
+    return result
 
 def evaluate(exp, class_dict=None):
     dpp(exp)
@@ -167,8 +210,6 @@ def evaluate(exp, class_dict=None):
                 assert isinstance(meth, Method)
                 #store the old binding
                 oldvalue = global_dict.get(meth.func.param)
-                # FIXME
-                #pdb.set_trace()
                 global_dict[meth.func.param] = meth.self_obj
                 for e in meth.func.body:
                     evaluate(e)
@@ -223,8 +264,10 @@ def evaluate(exp, class_dict=None):
     # ClassDef
     if type(exp) is ClassDef:
         dprint('---ClassDef')
-        #TODO: handle inheritance
-        class_object = ClassObject(exp.bases)
+        class_object = ClassObject([x.id for x in exp.bases])
+        class_object.linearizations = linearization(exp.name, copy.deepcopy(class_object.bases))
+        dprint(exp.name)
+        dprint(class_object.linearizations)
         dprint('class_dict after init')
         dprint(class_object.class_dict)
         global_dict[exp.name] = class_object
@@ -269,8 +312,6 @@ def evaluate(exp, class_dict=None):
             assert isinstance(meth, Method)
             #store the old binding
             oldvalue = global_dict.get(meth.func.param)
-            # FIXME
-            #pdb.set_trace()
             global_dict[meth.func.param] = meth.self_obj
             for e in meth.func.body:
                 evaluate(e)
